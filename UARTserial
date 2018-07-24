@@ -1,0 +1,49 @@
+
+El Receptor y Transmisor Serie Sincrónico Universal y Asíncrono (USART) es un dispositivo de comunicación en serie altamente flexible. El USART también puede usarse en el modo Master SPI. El bit de reducción de potencia de USART en 
+el registro de reducción de potencia (PRR.PRUSARTn) se debe escribir en '0' para habilitar USARTn. USART 0 está en PRR.
+
+------------------------------------------------------
+            Inicialización del USART
+------------------------------------------------------
+El USART debe inicializarse antes de que pueda tener lugar cualquier comunicación. El proceso de inicialización consiste normalmente en
+establecer la velocidad en baudios, configurar el formato de cuadro y habilitar el transmisor o el receptor en función del uso. 
+Para la operación USART activada por interrupción,el Indicador de interrupción global debe borrarse
+(y las interrupciones desactivadas globalmente) al realizar la inicialización.
+
+ntes de reiniciar con velocidad de transmisión o formato de trama modificados, asegúrese de que no haya transmisiones en curso durante el período de cambio de registros.
+El indicador de TXC (UCSRnA.TXC) se puede usar para verificar que el Transmisor haya completado todas las transferencias, y el Marcador de RXC se puede 
+usar para verificar que no haya datos no leídos en el búfer de recepción.
+El UCSRnA.TXC se debe borrar antes de cada transmisión (antes de escribir UDRn) si se usa para este fin.
+
+El Transmisor USART se habilita configurando el bit Transmit Habilitar (TXEN) en el Registro UCSRnB.
+Cuando el Transmisor está habilitado, la operación de puerto normal del pin TxDn es anulada por el USART
+y se le asigna la función de salida en serie del Transmisor. La velocidad en baudios, el modo de operación 
+y el formato de cuadro deben configurarse una vez antes de realizar cualquier transmisión. 
+Si se usa la operación sincrónica, el reloj en el pin XCKn se anulará y se utilizará como reloj de transmisión.
+
+------------------------------------------------------
+        Formato de paquete enviado
+------------------------------------------------------
+
+Una trama serial esta definida por bits de dato + bits de sincronización (inicio y 
+parada), pero tambien pueden añadirse bits de paridad de manera opcional
+
+IDLE|St|d0|d1|d2|d3|d4|d5|d6|d7|d8|P|Sp|
+IDLE: Estado no se transfiere ni recibe comunicción.
+St: bit de inicio 
+d[i]:bits de dato ---->UCSRnC.UCSZn[2:0]
+P: paridad par o impar.-----> UCSRnC.UPMn[1:0]
+Sp: bit de parada---------> UCSRnC.USBSn
+
+------------------------------------------------------
+        Envio de datos con 5 o 8 bits de Dato
+------------------------------------------------------
+Se inicia una transmisión de datos cargando el buffer de transmisión con los datos a transmitir. 
+
+ La CPU puede cargar el búfer de transmisión escribiendo en la ubicación de E / S de UDRn. 
+ Los datos almacenados en el búfer de transmisión se moverán al Registro de cambios cuando
+ el Registro de cambios esté listo para enviar un nuevo fotograma. El registro de cambios se carga 
+ con nuevos datos si está en estado inactivo (sin transmisión en curso) o inmediatamente después 
+ de que se transmite el último bit de parada del cuadro anterior. Cuando el Registro de cambios
+ se carga con datos nuevos, transferirá un cuadro completo a la velocidad indicada por el Registro de baudios,
+ el bit U2Xn o por XCKn, dependiendo del modo de operación.   
